@@ -1,7 +1,8 @@
 import React from "react";
-import { StyleSheet } from "react-native";
-import { Tabs } from "expo-router";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { Redirect, Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@clerk/expo";
 import { colors } from "../../constants/colors";
 
 const TabIcon = ({
@@ -15,6 +16,20 @@ const TabIcon = ({
 };
 
 const TabsLayout = () => {
+	const { isSignedIn, isLoaded } = useAuth();
+
+	if (!isLoaded) {
+		return (
+			<View style={styles.loading}>
+				<ActivityIndicator size="large" color={colors.accent} />
+			</View>
+		);
+	}
+
+	if (!isSignedIn) {
+		return <Redirect href="/(auth)/LoginScreen" />;
+	}
+
 	return (
 		<Tabs
 			screenOptions={{
@@ -47,6 +62,12 @@ const TabsLayout = () => {
 };
 
 const styles = StyleSheet.create({
+	loading: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: colors.background,
+	},
 	tabBar: {
 		backgroundColor: colors.surfaceMuted,
 		borderTopColor: colors.border,
