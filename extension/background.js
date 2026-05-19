@@ -1,4 +1,4 @@
-﻿console.log('TraceVault: Background service worker started.');
+console.log('TraceVault: Background service worker started.');
 chrome.runtime.onInstalled.addListener(function(details) {
   if (details.reason === 'install') {
     chrome.storage.local.set({ evidenceList: [] });

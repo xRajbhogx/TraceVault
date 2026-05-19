@@ -1,4 +1,4 @@
-﻿function showStatus(message, type) {
+function showStatus(message, type) {
   var statusBox = document.getElementById('statusBox');
   var statusText = document.getElementById('statusText');
   statusText.textContent = message;
@@ -59,9 +59,24 @@ document.getElementById('captureBtn').addEventListener('click', async function()
     var stored = await chrome.storage.local.get('evidenceList');
     var evidenceList = stored.evidenceList || [];
     evidenceList.push(evidenceRecord);
+    if (evidenceList.length > 20) evidenceList = evidenceList.slice(-20);
     await chrome.storage.local.set({ evidenceList: evidenceList });
+    showStatus('Sending to backend...');
+    try {
+      var response = await fetch('https://tracevault-backend.onrender.com/api/evidence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(evidenceRecord)
+      });
+      if (response.ok) {
+        showStatus('Evidence captured and saved to backend!', 'success');
+      } else {
+        showStatus('Saved locally. Backend error: ' + response.status, 'success');
+      }
+    } catch(e) {
+      showStatus('Saved locally. Backend offline.', 'success');
+    }
     console.log('TraceVault Evidence Record:', JSON.stringify(evidenceRecord, null, 2));
-    showStatus('Evidence captured and saved!', 'success');
     showEvidenceDetails(evidenceRecord);
   } catch(err) {
     showStatus('Error: ' + err.message, 'error');
