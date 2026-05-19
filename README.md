@@ -1,5 +1,9 @@
 # TraceVault
 
+
+https://github.com/user-attachments/assets/eb1139b9-e417-4ddd-a44a-f3a9a907e882
+
+
 Tamper-evident evidence capture for cyberbullying. TraceVault helps victims preserve abusive content before it disappears, with cryptographic hashing and a verifiable audit trail that law enforcement or institutions can trust.
 
 ## The problem
@@ -26,7 +30,7 @@ TraceVault captures the evidence at the moment it appears, computes a SHA-256 ha
 - Metadata integrity: the mobile app compares creation vs modification time to flag edits.
 - Separation of storage: image (S3) and metadata (Supabase) are stored separately to reduce tampering risk.
 
-## Why this stands out in a hackathon
+## Features
 - Real-world impact: empowers victims with legally credible evidence.
 - Technical depth: cryptographic hashing, metadata analysis, secure storage, and PDF generation.
 - Multi-surface capture: web extension and mobile app cover the biggest harassment channels.
