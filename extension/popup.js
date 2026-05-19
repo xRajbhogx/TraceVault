@@ -31,6 +31,12 @@ document.getElementById('captureBtn').addEventListener('click', async function()
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs[0];
     if (!tab || !tab.id) throw new Error('Could not find the active tab.');
+    var screenshotData = '';
+    try {
+      screenshotData = await chrome.tabs.captureVisibleTab(null, { format: 'png', quality: 90 });
+    } catch(e) {
+      screenshotData = '';
+    }
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
     var metadata = await chrome.tabs.sendMessage(tab.id, { action: 'extractMetadata' });
     if (!metadata || metadata.error) throw new Error(metadata ? metadata.error : 'No response from page.');
@@ -40,7 +46,7 @@ document.getElementById('captureBtn').addEventListener('click', async function()
       device: 'extension',
       user_id: 'clerk_user_id',
       captured_at: metadata.timestamp,
-      image_base64: '',
+      image_base64: screenshotData,
       sha256_hash: hash,
       platform: metadata.platform,
       full_url: metadata.url,
