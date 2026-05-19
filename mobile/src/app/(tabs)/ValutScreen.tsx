@@ -1,60 +1,118 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import Card from "../../components/Card";
-import Pill from "../../components/Pill";
+import IntegrityBadge from "../../components/IntegrityBadge";
 import SectionHeader from "../../components/SectionHeader";
-import StatusDot from "../../components/StatusDot";
 import { colors } from "../../constants/colors";
+import { getAllEvidence } from "../../utils/storageUtils";
+import type { EvidenceRecord } from "../../types/evidence";
 
-const vaultItems = [
-  {
-    id: "instagram",
-    platform: "Instagram",
-    variant: "instagram" as const,
-    time: "Today, 9:41 AM",
-    title: "instagram.com/p/abc123xyz",
-    hash: "a3f5c21e8b74f2c...",
-    status: "success" as const,
-  },
-  {
-    id: "twitter",
-    platform: "Twitter",
-    variant: "twitter" as const,
-    time: "Yesterday",
-    title: "twitter.com/messages/934...",
-    hash: "f72a19dc3e5b841...",
-    status: "success" as const,
-  },
-  {
-    id: "whatsapp",
-    platform: "WhatsApp",
-    variant: "whatsapp" as const,
-    time: "2 days ago",
-    title: "Group: Class 2024",
-    hash: "d91c44ef72da356...",
-    status: "success" as const,
-  },
-];
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
 
-const ValutScreen = () => {
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function truncateHash(hash: string): string {
+  return hash.length > 16 ? `${hash.substring(0, 16)}...` : hash;
+}
+
+const VaultScreen = () => {
+  const [records, setRecords] = useState<EvidenceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      const load = async () => {
+        setLoading(true);
+        const data = await getAllEvidence();
+        if (active) {
+          setRecords(data);
+          setLoading(false);
+        }
+      };
+
+      load();
+
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIconWrapper}>
+        <Ionicons name="lock-closed-outline" size={48} color={colors.textMuted} />
+      </View>
+      <Text style={styles.emptyTitle}>Vault is empty</Text>
+      <Text style={styles.emptySubtitle}>
+        Captured evidence will appear here.{"\n"}
+        Tap "Capture evidence" on the Home tab to start.
+      </Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SectionHeader title="My vault" subtitle="3 captures stored" />
+        <SectionHeader
+          title="My vault"
+          subtitle={
+            loading
+              ? "Loading..."
+              : `${records.length} capture${records.length !== 1 ? "s" : ""} stored`
+          }
+        />
+
+        {!loading && records.length === 0 && renderEmptyState()}
 
         <View style={styles.list}>
-          {vaultItems.map((item) => (
+          {records.map((item) => (
             <Card key={item.id} style={styles.vaultCard}>
               <View style={styles.vaultHeader}>
-                <Pill label={item.platform} variant={item.variant} />
-                <Text style={styles.vaultTime}>{item.time}</Text>
+                <View style={styles.platformPill}>
+                  <Text style={styles.platformText}>{item.platform}</Text>
+                </View>
+                <Text style={styles.vaultTime}>
+                  {formatDate(item.capturedAt)}
+                </Text>
               </View>
-              <Text style={styles.vaultTitle}>{item.title}</Text>
+
+              <View style={styles.senderRow}>
+                <Ionicons
+                  name="person-outline"
+                  size={14}
+                  color={colors.textMuted}
+                />
+                <Text style={styles.senderText}>{item.sender}</Text>
+              </View>
+
               <View style={styles.hashRow}>
-                <StatusDot variant={item.status} />
-                <Text style={styles.hashText}>{item.hash}</Text>
-                <View style={styles.hashBar} />
+                <IntegrityBadge flag={item.integrityFlag} size="small" />
+                <Text style={styles.hashText}>
+                  {truncateHash(item.sha256Hash)}
+                </Text>
               </View>
             </Card>
           ))}
@@ -89,11 +147,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  platformPill: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: colors.accentMuted,
+  },
+  platformText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.accent,
+  },
   vaultTime: {
     fontSize: 12,
     color: colors.textMuted,
   },
-  vaultTitle: {
+  senderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  senderText: {
     fontSize: 14,
     fontWeight: "600",
     color: colors.textPrimary,
@@ -106,13 +180,35 @@ const styles = StyleSheet.create({
   hashText: {
     fontSize: 11,
     color: colors.textMuted,
+    fontFamily: "monospace",
   },
-  hashBar: {
-    flex: 1,
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: colors.surfaceMuted,
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 60,
+    gap: 12,
+  },
+  emptyIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: colors.surfaceStrong,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
 
-export default ValutScreen;
+export default VaultScreen;

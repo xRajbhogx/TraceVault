@@ -1,11 +1,24 @@
-import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
 import Card from "../../components/Card";
 import SectionHeader from "../../components/SectionHeader";
 import StatusDot from "../../components/StatusDot";
 import { colors } from "../../constants/colors";
+import { computeSHA256 } from "../../utils/hashUtils";
+import { extractMetadata, extractMetadataFromUri } from "../../utils/metadataUtils";
 
 const recentCaptures = [
   {
@@ -29,6 +42,82 @@ const recentCaptures = [
 ];
 
 const HomeScreen = () => {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handleCaptureEvidence = async () => {
+    try {
+      setLoading(true);
+
+      // Request gallery permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission required",
+          "TraceVault needs access to your photo library to capture evidence."
+        );
+        return;
+      }
+
+      // Also request media library permission for metadata extraction
+      const mediaPermission = await MediaLibrary.requestPermissionsAsync();
+      if (mediaPermission.status !== "granted") {
+        Alert.alert(
+          "Permission required",
+          "TraceVault needs media library access to read image metadata."
+        );
+        return;
+      }
+
+      // Open gallery — images only, no editing
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const pickedAsset = result.assets[0];
+      const imageUri = pickedAsset.uri;
+      const assetId = pickedAsset.assetId;
+
+      // Extract metadata — use MediaLibrary if assetId available, otherwise fallback to file system
+      const metadataPromise = assetId
+        ? extractMetadata(assetId)
+        : extractMetadataFromUri(imageUri, pickedAsset.width, pickedAsset.height);
+
+      // Run metadata extraction and SHA-256 hash in parallel
+      const [metadata, sha256Hash] = await Promise.all([
+        metadataPromise,
+        computeSHA256(imageUri),
+      ]);
+
+      // Navigate to capture form with all extracted data
+      router.push({
+        pathname: "/capture-form",
+        params: {
+          imageUri,
+          sha256Hash,
+          integrityFlag: metadata.integrityFlag,
+          exifData: JSON.stringify({
+            creationTime: metadata.creationTime,
+            modificationTime: metadata.modificationTime,
+            width: metadata.width,
+            height: metadata.height,
+          }),
+        },
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to process image. Please try again.");
+      console.error("Capture evidence error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -37,13 +126,27 @@ const HomeScreen = () => {
           subtitle="Your evidence is safe here"
         />
 
-        <Card style={styles.captureCard}>
-          <View style={styles.captureIcon}>
-            <Ionicons name="camera" size={26} color={colors.textPrimary} />
-          </View>
-          <Text style={styles.captureTitle}>Capture evidence</Text>
-          <Text style={styles.captureSubtitle}>Screenshot + metadata + hash</Text>
-        </Card>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleCaptureEvidence}
+          disabled={loading}
+        >
+          <Card style={styles.captureCard}>
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.accent} />
+            ) : (
+              <View style={styles.captureIcon}>
+                <Ionicons name="camera" size={26} color={colors.textPrimary} />
+              </View>
+            )}
+            <Text style={styles.captureTitle}>
+              {loading ? "Processing..." : "Capture evidence"}
+            </Text>
+            <Text style={styles.captureSubtitle}>
+              Screenshot + metadata + hash
+            </Text>
+          </Card>
+        </TouchableOpacity>
 
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Recent captures</Text>

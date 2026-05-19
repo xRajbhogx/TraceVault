@@ -15,4 +15,13 @@ export const colors = {
   pillTwitter: "#223044",
   pillWhatsapp: "#1E2F29",
   tabInactive: "#5E636D",
+  warning: "#FFB84D",
+  warningMuted: "#3A2E1A",
+  danger: "#FF6B6B",
+  dangerMuted: "#3A1A1A",
+  successMuted: "#1A2E24",
+  inputBackground: "#101216",
+  inputBorder: "#2A2E36",
+  inputPlaceholder: "#5E636D",
+  overlay: "rgba(0,0,0,0.5)",
 };
