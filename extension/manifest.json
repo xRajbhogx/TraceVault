@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "TraceVault",
+  "version": "1.0",
+  "description": "Tamper-proof cyberbullying evidence capture tool",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
