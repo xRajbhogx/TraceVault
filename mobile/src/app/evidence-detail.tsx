@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -18,6 +20,10 @@ import IntegrityBadge from "../components/IntegrityBadge";
 import { colors } from "../constants/colors";
 import { fetchEvidenceById } from "../utils/evidenceApi";
 import type { EvidenceRecord, IntegrityFlag } from "../types/evidence";
+
+const REPORT_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ??
+  "https://tracevault-backend.onrender.com";
 
 function formatFullDate(isoString: string): string {
   const date = new Date(isoString);
@@ -140,6 +146,41 @@ export default function EvidenceDetailScreen() {
   const verifyBg = getVerificationBg(record.integrityFlag);
   const verifyIcon = getVerificationIcon(record.integrityFlag);
   const verifyLabel = getVerificationLabel(record.integrityFlag);
+  const hashValid = record.integrityFlag === "clean";
+
+  const handleExportPdf = async () => {
+    if (!userId) {
+      Alert.alert("Sign in required", "Please sign in to export the PDF report.");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      user_id: userId,
+      platform_url: record.url ?? "",
+      sender_id: record.sender ?? "",
+      captured_at: record.capturedAt ?? "",
+      sha256_hash: record.sha256Hash ?? "",
+      device: Platform.OS === "ios" ? "iOS" : "Android",
+      hash_valid: String(hashValid),
+    });
+
+    const reportUrl = `${REPORT_BASE_URL}/report/${encodeURIComponent(
+      record.id
+    )}?${params.toString()}`;
+
+    try {
+      const supported = await Linking.canOpenURL(reportUrl);
+      if (!supported) {
+        Alert.alert("Unavailable", "Cannot open the PDF report link.");
+        return;
+      }
+
+      await Linking.openURL(reportUrl);
+    } catch (error) {
+      console.error("Open PDF error:", error);
+      Alert.alert("Error", "Failed to open the PDF report.");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -244,9 +285,7 @@ export default function EvidenceDetailScreen() {
         <TouchableOpacity
           style={styles.exportButton}
           activeOpacity={0.8}
-          onPress={() => {
-            // Will be wired to backend PDF generation later
-          }}
+          onPress={handleExportPdf}
         >
           <Ionicons
             name="download-outline"
