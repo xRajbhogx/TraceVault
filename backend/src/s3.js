@@ -35,4 +35,14 @@ const getFromS3 = async (userId, evidenceId) => {
   return result.Body; // image buffer return karega
 };
 
-module.exports = { uploadToS3, getFromS3 };
+// S3 se image delete karna
+const deleteFromS3 = async (userId, evidenceId) => {
+  const params = {
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: `evidence/${userId}/${evidenceId}.png`,
+  };
+
+  await s3.deleteObject(params).promise();
+};
+
+module.exports = { uploadToS3, getFromS3, deleteFromS3 };
