@@ -1,0 +1,25 @@
+﻿*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { width: 360px; min-height: 200px; background-color: #0d0f14; color: #e8eaf0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 0; }
+.container { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 24px 20px 16px; }
+.header { text-align: center; }
+.logo { font-size: 32px; margin-bottom: 6px; }
+.title { font-size: 26px; font-weight: 800; letter-spacing: 2px; color: #ffffff; text-transform: uppercase; text-shadow: 0 0 12px rgba(99,202,183,0.5); }
+.subtitle { font-size: 12px; color: #63cab7; letter-spacing: 1px; margin-top: 2px; text-transform: uppercase; }
+.capture-btn { width: 100%; padding: 13px 20px; background: linear-gradient(135deg, #63cab7, #3a8f7f); color: #0d0f14; font-size: 15px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 4px 20px rgba(99,202,183,0.3); }
+.capture-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(99,202,183,0.5); }
+.capture-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.status-box { width: 100%; background: #161921; border: 1px solid #2a2f3a; border-radius: 8px; padding: 10px 14px; text-align: center; }
+.status-box.success { border-color: #63cab7; background: #0f1e1c; }
+.status-box.error { border-color: #e05c5c; background: #1e0f0f; }
+.status-text { font-family: 'Courier New', monospace; font-size: 12px; color: #a0a8b8; }
+.status-box.success .status-text { color: #63cab7; }
+.status-box.error .status-text { color: #e05c5c; }
+.evidence-details { width: 100%; background: #161921; border: 1px solid #2a2f3a; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.details-title { font-size: 13px; font-weight: 700; color: #63cab7; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid #2a2f3a; padding-bottom: 8px; }
+.detail-row { display: flex; flex-direction: column; gap: 2px; }
+.detail-label { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px; }
+.detail-value { font-family: 'Courier New', monospace; font-size: 11px; color: #c9d1e0; word-break: break-all; line-height: 1.5; }
+.hash-value { color: #63cab7; font-size: 10px; }
+.snippet-value { color: #8a94a6; font-size: 10.5px; font-style: italic; white-space: pre-wrap; }
+.footer { font-size: 10px; color: #3a3f4d; text-align: center; font-family: 'Courier New', monospace; padding-top: 4px; }
+.hidden { display: none !important; }
