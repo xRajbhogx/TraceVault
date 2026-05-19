@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Card from "../../components/Card";
 import IntegrityBadge from "../../components/IntegrityBadge";
@@ -36,6 +36,7 @@ function truncateHash(hash: string): string {
 }
 
 const VaultScreen = () => {
+  const router = useRouter();
   const [records, setRecords] = useState<EvidenceRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -89,32 +90,43 @@ const VaultScreen = () => {
 
         <View style={styles.list}>
           {records.map((item) => (
-            <Card key={item.id} style={styles.vaultCard}>
-              <View style={styles.vaultHeader}>
-                <View style={styles.platformPill}>
-                  <Text style={styles.platformText}>{item.platform}</Text>
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: "../evidence-detail",
+                  params: { id: item.id },
+                })
+              }
+            >
+              <Card style={styles.vaultCard}>
+                <View style={styles.vaultHeader}>
+                  <View style={styles.platformPill}>
+                    <Text style={styles.platformText}>{item.platform}</Text>
+                  </View>
+                  <Text style={styles.vaultTime}>
+                    {formatDate(item.capturedAt)}
+                  </Text>
                 </View>
-                <Text style={styles.vaultTime}>
-                  {formatDate(item.capturedAt)}
-                </Text>
-              </View>
 
-              <View style={styles.senderRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={14}
-                  color={colors.textMuted}
-                />
-                <Text style={styles.senderText}>{item.sender}</Text>
-              </View>
+                <View style={styles.senderRow}>
+                  <Ionicons
+                    name="person-outline"
+                    size={14}
+                    color={colors.textMuted}
+                  />
+                  <Text style={styles.senderText}>{item.sender}</Text>
+                </View>
 
-              <View style={styles.hashRow}>
-                <IntegrityBadge flag={item.integrityFlag} size="small" />
-                <Text style={styles.hashText}>
-                  {truncateHash(item.sha256Hash)}
-                </Text>
-              </View>
-            </Card>
+                <View style={styles.hashRow}>
+                  <IntegrityBadge flag={item.integrityFlag} size="small" />
+                  <Text style={styles.hashText}>
+                    {truncateHash(item.sha256Hash)}
+                  </Text>
+                </View>
+              </Card>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>

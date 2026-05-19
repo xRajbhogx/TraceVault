@@ -49,3 +49,14 @@ export async function getAllEvidence(): Promise<EvidenceRecord[]> {
 
   return records;
 }
+
+/**
+ * Retrieves a single evidence record by ID from AsyncStorage.
+ */
+export async function getEvidenceById(
+  id: string
+): Promise<EvidenceRecord | null> {
+  const raw = await AsyncStorage.getItem(`evidence:${id}`);
+  if (!raw) return null;
+  return JSON.parse(raw) as EvidenceRecord;
+}
