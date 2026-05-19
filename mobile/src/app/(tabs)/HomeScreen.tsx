@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -44,8 +45,22 @@ const recentCaptures = [
 
 const HomeScreen = () => {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, userId } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  const handleCopyUserId = async () => {
+    if (!userId) {
+      Alert.alert("User ID unavailable", "Please sign in to view your User ID.");
+      return;
+    }
+
+    try {
+      await Share.share({ message: userId });
+    } catch (error) {
+      Alert.alert("Error", "Unable to share User ID.");
+      console.error("Share user ID error:", error);
+    }
+  };
 
   const handleCaptureEvidence = async () => {
     try {
@@ -128,14 +143,24 @@ const HomeScreen = () => {
             title="TraceVault"
             subtitle="Your evidence is safe here"
           />
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => signOut()}
-            accessibilityLabel="Log out"
-          >
-            <Ionicons name="log-out-outline" size={18} color={colors.textPrimary} />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.userIdButton}
+              onPress={handleCopyUserId}
+              accessibilityLabel="Share user ID"
+            >
+              <Ionicons name="copy-outline" size={18} color={colors.textPrimary} />
+              <Text style={styles.logoutText}>User ID</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={() => signOut()}
+              accessibilityLabel="Log out"
+            >
+              <Ionicons name="log-out-outline" size={18} color={colors.textPrimary} />
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -198,6 +223,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  userIdButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
   },
   logoutButton: {
     flexDirection: "row",

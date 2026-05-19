@@ -12,6 +12,16 @@
       <h1 class="title">TraceVault</h1>
       <p class="subtitle">Capture evidence instantly</p>
     </div>
+    <div class="input-group">
+      <label class="input-label" for="userIdInput">User ID</label>
+      <input
+        id="userIdInput"
+        class="text-input"
+        type="text"
+        placeholder="Paste your Clerk user_id"
+      />
+      <p class="input-help">Required to link evidence to your account.</p>
+    </div>
     <button id="captureBtn" class="capture-btn">Capture Evidence</button>
     <div id="statusBox" class="status-box hidden">
       <p id="statusText" class="status-text"></p>
