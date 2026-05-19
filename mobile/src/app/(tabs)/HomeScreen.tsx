@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
@@ -43,6 +44,7 @@ const recentCaptures = [
 
 const HomeScreen = () => {
   const router = useRouter();
+  const { signOut } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleCaptureEvidence = async () => {
@@ -121,10 +123,20 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SectionHeader
-          title="TraceVault"
-          subtitle="Your evidence is safe here"
-        />
+        <View style={styles.headerRow}>
+          <SectionHeader
+            title="TraceVault"
+            subtitle="Your evidence is safe here"
+          />
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => signOut()}
+            accessibilityLabel="Log out"
+          >
+            <Ionicons name="log-out-outline" size={18} color={colors.textPrimary} />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           activeOpacity={0.8}
@@ -180,6 +192,28 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 24,
     gap: 18,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  logoutText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textPrimary,
   },
   captureCard: {
     paddingVertical: 24,
