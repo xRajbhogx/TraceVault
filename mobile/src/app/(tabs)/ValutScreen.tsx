@@ -3,11 +3,12 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@clerk/expo";
 import Card from "../../components/Card";
 import IntegrityBadge from "../../components/IntegrityBadge";
 import SectionHeader from "../../components/SectionHeader";
 import { colors } from "../../constants/colors";
-import { getAllEvidence } from "../../utils/storageUtils";
+import { fetchEvidenceForUser } from "../../utils/evidenceApi";
 import type { EvidenceRecord } from "../../types/evidence";
 
 function formatDate(isoString: string): string {
@@ -37,6 +38,7 @@ function truncateHash(hash: string): string {
 
 const VaultScreen = () => {
   const router = useRouter();
+  const { userId } = useAuth();
   const [records, setRecords] = useState<EvidenceRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,10 +48,28 @@ const VaultScreen = () => {
 
       const load = async () => {
         setLoading(true);
-        const data = await getAllEvidence();
-        if (active) {
-          setRecords(data);
-          setLoading(false);
+        if (!userId) {
+          if (active) {
+            setRecords([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        try {
+          const data = await fetchEvidenceForUser(userId);
+          if (active) {
+            setRecords(data);
+          }
+        } catch (error) {
+          console.error("Load evidence error:", error);
+          if (active) {
+            setRecords([]);
+          }
+        } finally {
+          if (active) {
+            setLoading(false);
+          }
         }
       };
 
@@ -58,7 +78,7 @@ const VaultScreen = () => {
       return () => {
         active = false;
       };
-    }, [])
+    }, [userId])
   );
 
   const renderEmptyState = () => (

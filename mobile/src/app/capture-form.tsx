@@ -14,12 +14,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@clerk/expo";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { colors } from "../constants/colors";
 import IntegrityBadge from "../components/IntegrityBadge";
 import Card from "../components/Card";
-import { saveEvidence } from "../utils/storageUtils";
-import type { IntegrityFlag, EvidenceRecord } from "../types/evidence";
+import { captureEvidence } from "../utils/evidenceApi";
+import type { IntegrityFlag } from "../types/evidence";
 
 function formatTimestamp(ms: number | null): string {
   if (ms === null) return "N/A";
@@ -27,12 +28,9 @@ function formatTimestamp(ms: number | null): string {
   return date.toLocaleString();
 }
 
-function generateId(): string {
-  return `ev_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-}
-
 export default function CaptureFormScreen() {
   const router = useRouter();
+  const { userId } = useAuth();
   const params = useLocalSearchParams<{
     imageUri: string;
     sha256Hash: string;
@@ -71,13 +69,19 @@ export default function CaptureFormScreen() {
       Alert.alert("Required", "Please paste the harassing message.");
       return;
     }
+    if (!userId) {
+      Alert.alert("Sign in required", "Please sign in to save evidence.");
+      return;
+    }
 
     try {
       setSaving(true);
 
-      const record: EvidenceRecord = {
-        id: generateId(),
-        capturedAt: new Date().toISOString(),
+      const capturedAt = new Date().toISOString();
+      const deviceLabel = Platform.OS === "ios" ? "iOS" : "Android";
+
+      const saved = await captureEvidence({
+        userId,
         platform: platform.trim(),
         url: url.trim(),
         sender: sender.trim(),
@@ -85,6 +89,8 @@ export default function CaptureFormScreen() {
         additionalContext: additionalContext.trim(),
         imageUri,
         sha256Hash,
+        capturedAt,
+        device: deviceLabel,
         exifData: {
           creationTime: exifData.creationTime,
           modificationTime: exifData.modificationTime,
@@ -92,11 +98,10 @@ export default function CaptureFormScreen() {
           height: exifData.height,
         },
         integrityFlag,
-      };
+      });
 
-      await saveEvidence(record);
-
-      Alert.alert("Evidence saved", "Your evidence has been securely stored.", [
+      const suffix = saved.id ? ` (ID: ${saved.id})` : "";
+      Alert.alert("Evidence saved", `Your evidence has been securely stored.${suffix}`, [
         {
           text: "OK",
           onPress: () => router.back(),

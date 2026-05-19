@@ -11,11 +11,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@clerk/expo";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Card from "../components/Card";
 import IntegrityBadge from "../components/IntegrityBadge";
 import { colors } from "../constants/colors";
-import { getEvidenceById } from "../utils/storageUtils";
+import { fetchEvidenceById } from "../utils/evidenceApi";
 import type { EvidenceRecord, IntegrityFlag } from "../types/evidence";
 
 function formatFullDate(isoString: string): string {
@@ -78,20 +79,31 @@ function getVerificationBg(flag: IntegrityFlag): string {
 
 export default function EvidenceDetailScreen() {
   const router = useRouter();
+  const { userId } = useAuth();
   const params = useLocalSearchParams<{ id: string }>();
   const [record, setRecord] = useState<EvidenceRecord | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      if (params.id) {
-        const data = await getEvidenceById(params.id);
-        setRecord(data);
+      if (!userId || !params.id) {
+        setRecord(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        const data = await fetchEvidenceById(params.id);
+        setRecord(data);
+      } catch (error) {
+        console.error("Load evidence detail error:", error);
+        setRecord(null);
+      } finally {
+        setLoading(false);
+      }
     };
     load();
-  }, [params.id]);
+  }, [params.id, userId]);
 
   if (loading) {
     return (
