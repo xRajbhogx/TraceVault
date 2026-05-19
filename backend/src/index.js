@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const { supabase } = require('./db');
 const { generatePDF } = require('./pdf');
 const { uploadToS3, getFromS3 } = require('./s3');
 const { generateHash, verifyHash } = require('./hash');
@@ -95,6 +96,127 @@ app.get('/report/:evidenceId', async (req, res) => {
 
   } catch (error) {
     console.error('PDF error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+// ✅ Evidence save karna database mein
+app.post('/evidence/capture', async (req, res) => {
+  try {
+    const {
+      captured_at,
+      platform_url,
+      platform_name,
+      sender_id,
+      screenshot_base64,
+      page_content,
+      page_title,
+      sha256_hash,
+      device,
+      user_id,
+      notes,
+    } = req.body;
+
+    const evidenceId = `EV-${Date.now()}`;
+
+    // S3 pe screenshot upload karo
+    const imageUrl = await uploadToS3(screenshot_base64, evidenceId, user_id);
+    const s3Key = `evidence/${user_id}/${evidenceId}.png`;
+
+    // Hash verify karo
+    const hashValid = verifyHash(screenshot_base64, sha256_hash);
+
+    // Supabase mein save karo
+    const { data, error } = await supabase
+      .from('evidence')
+      .insert([{
+        id: evidenceId,
+        user_id,
+        image_url: imageUrl,
+        s3_image_key: s3Key,
+        platform_url,
+        platform_name,
+        sender_id,
+        page_content,
+        page_title,
+        sha256_hash,
+        hash_valid: hashValid,
+        integrity_flag: hashValid ? 'clean' : 'modified',
+        device,
+        notes,
+        captured_at,
+      }]);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      evidence_id: evidenceId,
+      image_url: imageUrl,
+      hash_valid: hashValid,
+      message: 'Evidence captured successfully',
+    });
+
+  } catch (error) {
+    console.error('Capture error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ User ki saari evidence fetch karo
+app.get('/evidence/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data, error } = await supabase
+      .from('evidence')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, evidence: data });
+
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ Single evidence fetch karo
+app.get('/evidence/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('evidence')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, evidence: data });
+
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ Evidence delete karo
+app.delete('/evidence/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from('evidence')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({ success: true, message: 'Evidence deleted' });
+
+  } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
