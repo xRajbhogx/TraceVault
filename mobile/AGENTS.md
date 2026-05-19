@@ -20,4 +20,4 @@ A regular screenshot proves nothing. TraceVault produces tamper-evident, timesta
 - Dont write a component more than twice, if needed create that component in component folder and use as many times as needed.
 - Dont use any depricated packages, always use latest ones.
 - Dont use inline styles at all, use stylesheet everywhere
-- 
+- dont use colors, create a colors const in const folder and put all the colors in that and use everywhere needed
